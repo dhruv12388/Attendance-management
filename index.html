@@ -1,0 +1,2777 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AttendEase</title>
+    <meta name="description" content="Student attendance management dashboard with class and subject scheduling, date-wise and monthly reporting, low-attendance alerts, CSV export, and localStorage persistence." />
+    <meta property="og:title" content="AttendEase" />
+    <meta property="og:description" content="Student attendance management dashboard with class and subject scheduling, date-wise and monthly reporting, low-attendance alerts, CSV export, and localStorage persistence." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface-muted: #f1f5f9;
+        --surface-hover: #f8fafc;
+        --border: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --text: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        --accent: #1d4ed8;
+        --accent-hover: #1e40af;
+        --accent-soft: #eff6ff;
+        --accent-text: #1d4ed8;
+        --success: #15803d;
+        --success-bg: #f0fdf4;
+        --success-border: #bbf7d0;
+        --warning: #b45309;
+        --warning-bg: #fffbeb;
+        --warning-border: #fde68a;
+        --danger: #b91c1c;
+        --danger-bg: #fef2f2;
+        --danger-border: #fecaca;
+        --chart-grid: #e2e8f0;
+        --chart-present: #16a34a;
+        --chart-late: #d97706;
+        --chart-absent: #dc2626;
+        --chart-line: #1d4ed8;
+        --chart-area: rgba(29, 78, 216, 0.10);
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+        --shadow-lg: 0 16px 40px -12px rgba(15, 23, 42, 0.16);
+        --radius: 10px;
+        --radius-sm: 7px;
+        --sidebar-w: 256px;
+        --topbar-h: 64px;
+        --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      [data-theme="dark"] {
+        --bg: #0b1120;
+        --surface: #111827;
+        --surface-muted: #1e293b;
+        --surface-hover: #172033;
+        --border: #1e293b;
+        --border-strong: #334155;
+        --text: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --accent: #3b82f6;
+        --accent-hover: #60a5fa;
+        --accent-soft: rgba(59, 130, 246, 0.14);
+        --accent-text: #93c5fd;
+        --success: #4ade80;
+        --success-bg: rgba(22, 163, 74, 0.14);
+        --success-border: rgba(74, 222, 128, 0.25);
+        --warning: #fbbf24;
+        --warning-bg: rgba(217, 119, 6, 0.14);
+        --warning-border: rgba(251, 191, 36, 0.25);
+        --danger: #f87171;
+        --danger-bg: rgba(220, 38, 38, 0.14);
+        --danger-border: rgba(248, 113, 113, 0.25);
+        --chart-grid: #1e293b;
+        --chart-present: #22c55e;
+        --chart-late: #f59e0b;
+        --chart-absent: #ef4444;
+        --chart-line: #60a5fa;
+        --chart-area: rgba(96, 165, 250, 0.14);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+        --shadow-lg: 0 20px 44px -12px rgba(0, 0, 0, 0.55);
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1, h2, h3, h4 {
+        font-family: var(--font-display);
+        margin: 0;
+        letter-spacing: -0.015em;
+        color: var(--text);
+      }
+
+      button, input, select, textarea {
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* App Shell */
+      .app-shell {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-w);
+        flex-shrink: 0;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        z-index: 40;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .sidebar-header {
+        height: var(--topbar-h);
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--text);
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        padding: 0;
+      }
+
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #ffffff;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+
+      .brand-name {
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+      }
+
+      .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .nav-section-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        padding: 10px 12px 4px;
+      }
+
+      .nav-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        min-height: 40px;
+        border: none;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: left;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, color 0.15s ease;
+      }
+
+      .nav-item:hover {
+        background: var(--surface-muted);
+        color: var(--text);
+      }
+
+      .nav-item.active {
+        background: var(--accent-soft);
+        color: var(--accent-text);
+        font-weight: 600;
+      }
+
+      .nav-item-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .nav-item-left span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .nav-count {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--danger);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .sidebar-footer {
+        padding: 14px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .institution-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .theme-toggle-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        min-height: 38px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-muted);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+      .theme-toggle-btn:hover {
+        border-color: var(--border-strong);
+        color: var(--text);
+      }
+
+      .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 35;
+      }
+
+      .sidebar-close-btn {
+        display: none;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+      }
+
+      /* Main Container */
+      .main-wrapper {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar {
+        height: var(--topbar-h);
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 25;
+      }
+
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .mobile-menu-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .breadcrumb strong {
+        color: var(--text);
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .global-search-wrap {
+        position: relative;
+        width: 240px;
+      }
+
+      .global-search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+
+      .global-search-input {
+        width: 100%;
+        height: 38px;
+        padding: 0 12px 0 34px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-muted);
+        font-size: 13px;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+      }
+
+      .global-search-input:focus {
+        background: var(--surface);
+        border-color: var(--accent);
+        outline: none;
+      }
+
+      .global-search-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        min-width: 300px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        z-index: 50;
+        max-height: 320px;
+        overflow-y: auto;
+        display: none;
+      }
+
+      .global-search-dropdown.open {
+        display: block;
+      }
+
+      .search-result-item {
+        width: 100%;
+        padding: 10px 14px;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .search-result-item:last-child {
+        border-bottom: none;
+      }
+
+      .search-result-item:hover {
+        background: var(--surface-muted);
+      }
+
+      .main-content {
+        flex: 1;
+        padding: 24px;
+        max-width: 1360px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 38px;
+        padding: 8px 16px;
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+
+      .btn-secondary {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--text);
+      }
+
+      .btn-secondary:hover {
+        background: var(--surface-muted);
+        border-color: var(--border-strong);
+      }
+
+      .btn-danger {
+        background: var(--danger-bg);
+        border-color: var(--danger-border);
+        color: var(--danger);
+      }
+
+      .btn-danger:hover {
+        background: var(--danger);
+        color: #ffffff;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-secondary);
+        padding: 6px 10px;
+        min-height: 34px;
+      }
+
+      .btn-ghost:hover {
+        background: var(--surface-muted);
+        color: var(--text);
+      }
+
+      .btn-sm {
+        min-height: 32px;
+        padding: 5px 11px;
+        font-size: 12px;
+      }
+
+      /* Page Header */
+      .page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+
+      .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.25;
+        text-wrap: balance;
+      }
+
+      .page-subtitle {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .page-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      /* Cards & Grids */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .kpi-card {
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-card.clickable {
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+      }
+
+      .kpi-card.clickable:hover {
+        border-color: var(--border-strong);
+      }
+
+      .kpi-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .kpi-value {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.15;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .kpi-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: 1.45fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .card-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .card-body {
+        padding: 20px;
+      }
+
+      .chart-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .segmented {
+        display: inline-flex;
+        padding: 3px;
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        gap: 2px;
+      }
+
+      .segmented button {
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, color 0.15s ease;
+      }
+
+      .segmented button.active {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .chart-canvas-wrap {
+        position: relative;
+        width: 100%;
+        height: 270px;
+      }
+
+      .chart-canvas-wrap canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .chart-tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: var(--text);
+        color: var(--surface);
+        padding: 8px 11px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.4;
+        z-index: 80;
+        opacity: 0;
+        transition: opacity 0.1s ease;
+        box-shadow: var(--shadow-lg);
+        white-space: nowrap;
+      }
+
+      .chart-legend {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .legend-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+
+      /* Dashboard Bottom Grid */
+      .two-col-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .three-col-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      /* Form Controls */
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .input, .select, .textarea {
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 13px;
+        transition: border-color 0.15s ease;
+      }
+
+      .select-sm {
+        height: 32px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .textarea {
+        height: auto;
+        min-height: 76px;
+        padding: 10px 12px;
+        resize: vertical;
+      }
+
+      .input:focus, .select:focus, .textarea:focus {
+        border-color: var(--accent);
+        outline: none;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      /* Tables */
+      .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+
+      thead th {
+        padding: 11px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-muted);
+        white-space: nowrap;
+      }
+
+      tbody td {
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+        font-size: 13px;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:hover {
+        background: var(--surface-hover);
+      }
+
+      .text-right {
+        text-align: right;
+      }
+
+      .student-link {
+        background: transparent;
+        border: none;
+        padding: 0;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        text-align: left;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        text-underline-offset: 3px;
+        transition: color 0.15s ease, text-decoration-color 0.15s ease;
+      }
+
+      .student-link:hover {
+        color: var(--accent-text);
+        text-decoration-color: var(--accent-text);
+      }
+
+      /* Semantic State Labels (Not decorative pills — explicit text + border) */
+      .status-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 5px;
+        white-space: nowrap;
+      }
+
+      .status-present {
+        color: var(--success);
+        background: var(--success-bg);
+        border: 1px solid var(--success-border);
+      }
+
+      .status-late {
+        color: var(--warning);
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+      }
+
+      .status-absent {
+        color: var(--danger);
+        background: var(--danger-bg);
+        border: 1px solid var(--danger-border);
+      }
+
+      .status-neutral {
+        color: var(--text-secondary);
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+      }
+
+      /* Attendance Marking Toggle Group */
+      .mark-group {
+        display: inline-flex;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: var(--surface-muted);
+      }
+
+      .mark-btn {
+        border: none;
+        border-right: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+        padding: 7px 14px;
+        min-height: 36px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.12s ease, color 0.12s ease;
+      }
+
+      .mark-btn:last-child {
+        border-right: none;
+      }
+
+      .mark-btn:hover {
+        background: var(--surface);
+      }
+
+      .mark-btn.active-present {
+        background: var(--success);
+        color: #ffffff;
+      }
+
+      .mark-btn.active-late {
+        background: var(--warning);
+        color: #ffffff;
+      }
+
+      .mark-btn.active-absent {
+        background: var(--danger);
+        color: #ffffff;
+      }
+
+      /* Progress Bar */
+      .progress-track {
+        width: 100%;
+        height: 7px;
+        border-radius: 4px;
+        background: var(--surface-muted);
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+      }
+
+      /* Monthly Matrix / Calendar */
+      .matrix-cell {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+        padding: 4px 6px !important;
+        min-width: 28px;
+      }
+
+      .cell-p { color: var(--success); background: var(--success-bg); }
+      .cell-l { color: var(--warning); background: var(--warning-bg); }
+      .cell-a { color: var(--danger); background: var(--danger-bg); }
+      .cell-none { color: var(--text-muted); }
+
+      /* Student Profile View */
+      .profile-banner {
+        padding: 22px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      .profile-identity {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .avatar-initials {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: var(--accent-soft);
+        color: var(--accent-text);
+        border: 1px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-family: var(--font-display);
+        font-size: 20px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .meta-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      /* Empty State */
+      .empty-state {
+        padding: 44px 20px;
+        text-align: center;
+        color: var(--text-muted);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .empty-state h3 {
+        font-size: 15px;
+        color: var(--text);
+      }
+      .empty-state p {
+        margin: 0;
+        max-width: 400px;
+        font-size: 13px;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 60;
+      }
+
+      .modal-overlay.open {
+        display: flex;
+      }
+
+      .modal {
+        width: 100%;
+        max-width: 520px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+      }
+
+      .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modal-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .modal-body {
+        padding: 20px;
+        max-height: 75vh;
+        overflow-y: auto;
+      }
+
+      .modal-footer {
+        padding: 14px 20px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        background: var(--surface-muted);
+      }
+
+      /* Toast */
+      .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 90;
+      }
+
+      .toast {
+        background: var(--text);
+        color: var(--surface);
+        padding: 11px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: toastIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes toastIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+
+      @media (max-width: 1120px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .charts-grid {
+          grid-template-columns: 1fr;
+        }
+        .two-col-grid {
+          grid-template-columns: 1fr;
+        }
+        .three-col-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 960px) {
+        .sidebar {
+          position: fixed;
+          left: 0;
+          top: 0;
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .sidebar-backdrop.open {
+          display: block;
+        }
+        .sidebar-close-btn,
+        .mobile-menu-btn {
+          display: inline-flex;
+        }
+        .global-search-wrap {
+          width: 180px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .main-content {
+          padding: 16px;
+        }
+        .topbar {
+          padding: 0 14px;
+        }
+        .kpi-grid {
+          grid-template-columns: 1fr;
+        }
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .global-search-wrap {
+          display: none;
+        }
+        .btn-hide-sm {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+      <aside id="sidebar" class="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-header">
+          <button type="button" class="brand-lockup" onclick="navigateTo('dashboard')">
+            <span class="brand-mark" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </span>
+            <span class="brand-name">AttendEase</span>
+          </button>
+          <button type="button" id="sidebarCloseBtn" class="sidebar-close-btn" aria-label="Close navigation menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-section-label">Workspace</div>
+          <button type="button" class="nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span>Dashboard</span>
+            </span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="mark" onclick="navigateTo('mark')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+              <span>Mark Attendance</span>
+            </span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="students" onclick="navigateTo('students')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Students</span>
+            </span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="academics" onclick="navigateTo('academics')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span>Classes &amp; Subjects</span>
+            </span>
+          </button>
+
+          <div class="nav-section-label">Records &amp; Analytics</div>
+          <button type="button" class="nav-item" data-view="datewise" onclick="navigateTo('datewise')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Date-wise Log</span>
+            </span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="monthly" onclick="navigateTo('monthly')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <span>Monthly Reports</span>
+            </span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="alerts" onclick="navigateTo('alerts')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>Low Attendance</span>
+            </span>
+            <span id="sidebarAlertCount" class="nav-count">0</span>
+          </button>
+
+          <button type="button" class="nav-item" data-view="student-profile" onclick="openFirstStudentProfile()">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Student Profile</span>
+            </span>
+          </button>
+
+          <div class="nav-section-label">System</div>
+          <button type="button" class="nav-item" data-view="settings" onclick="navigateTo('settings')">
+            <span class="nav-item-left">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>Settings &amp; Data</span>
+            </span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div id="sidebarInstitution" class="institution-meta"></div>
+          <button type="button" id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()">
+            <span id="themeToggleLabel">Dark Mode</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+      </aside>
+
+      <div class="main-wrapper">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button type="button" id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Open navigation menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div class="breadcrumb" id="topbarBreadcrumb">
+              <span>AttendEase</span>
+              <span>/</span>
+              <strong>Dashboard</strong>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <div class="global-search-wrap">
+              <svg class="global-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                type="search"
+                id="globalStudentSearch"
+                class="global-search-input"
+                placeholder="Jump to student..."
+                autocomplete="off"
+                aria-label="Search students across the college"
+              />
+              <div id="globalSearchDropdown" class="global-search-dropdown" role="listbox"></div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-hide-sm" onclick="exportOverallCSV()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Export CSV</span>
+            </button>
+            <button type="button" class="btn btn-primary" onclick="navigateTo('mark')">
+              <span>Mark Attendance</span>
+            </button>
+          </div>
+        </header>
+
+        <main id="mainContent" class="main-content"></main>
+      </div>
+    </div>
+
+    <div id="chartTooltip" class="chart-tooltip"></div>
+
+    <!-- Reusable Modal -->
+    <div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalTitle" class="modal-title">Modal</h3>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()" aria-label="Close modal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+        <div id="modalFooter" class="modal-footer"></div>
+      </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        const STORAGE_KEY = 'attendease_data_v1';
+
+        /* ---------------- Utility Helpers ---------------- */
+        function escapeHtml(str) {
+          if (str === null || str === undefined) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        function todayISO() {
+          const d = new Date();
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          return yyyy + '-' + mm + '-' + dd;
+        }
+
+        function currentMonthISO() {
+          return todayISO().slice(0, 7);
+        }
+
+        function generateId(prefix) {
+          return prefix + '_' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+        }
+
+        function formatDateReadable(iso) {
+          if (!iso) return '—';
+          const parts = iso.split('-');
+          if (parts.length !== 3) return iso;
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function formatMonthReadable(ym) {
+          if (!ym) return '—';
+          const parts = ym.split('-');
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+          return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+
+        function getInitials(name) {
+          return String(name || '?')
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map(function (w) { return w.charAt(0).toUpperCase(); })
+            .join('') || '?';
+        }
+
+        function showToast(message) {
+          const container = document.getElementById('toastContainer');
+          const el = document.createElement('div');
+          el.className = 'toast';
+          el.textContent = message;
+          container.appendChild(el);
+          setTimeout(function () {
+            el.remove();
+          }, 3000);
+        }
+
+        /* ---------------- Seed Data & Storage ---------------- */
+        function buildSeedData() {
+          const classes = [
+            { id: 'cls_cse3', name: 'B.Tech CSE - Sem 3', code: 'CSE-3A', semester: 'Semester 3', advisor: 'Dr. Ananya Mehta' },
+            { id: 'cls_cse5', name: 'B.Tech CSE - Sem 5', code: 'CSE-5B', semester: 'Semester 5', advisor: 'Prof. Vikram Rao' },
+            { id: 'cls_bca2', name: 'BCA - Year 2', code: 'BCA-2', semester: 'Semester 4', advisor: 'Dr. Kavita Nair' }
+          ];
+
+          const subjects = [
+            { id: 'sub_dsa', classId: 'cls_cse3', code: 'CS301', name: 'Data Structures & Algorithms', instructor: 'Dr. Ananya Mehta', credits: 4 },
+            { id: 'sub_dbms', classId: 'cls_cse3', code: 'CS304', name: 'Database Management Systems', instructor: 'Prof. Rohan Kulkarni', credits: 4 },
+            { id: 'sub_os', classId: 'cls_cse5', code: 'CS502', name: 'Operating Systems', instructor: 'Prof. Vikram Rao', credits: 4 },
+            { id: 'sub_cn', classId: 'cls_cse5', code: 'CS505', name: 'Computer Networks', instructor: 'Dr. Sonal Kapoor', credits: 3 },
+            { id: 'sub_web', classId: 'cls_bca2', code: 'BCA401', name: 'Full-Stack Web Development', instructor: 'Dr. Kavita Nair', credits: 4 },
+            { id: 'sub_stat', classId: 'cls_bca2', code: 'BCA403', name: 'Applied Statistics', instructor: 'Prof. Arjun Desai', credits: 3 }
+          ];
+
+          const students = [
+            { id: 'stu_1', rollNo: 'CSE2401', name: 'Aarav Sharma', classId: 'cls_cse3', email: 'aarav.sharma@college.edu', phone: '+91 98201 11201', notes: 'Class representative' },
+            { id: 'stu_2', rollNo: 'CSE2402', name: 'Diya Patel', classId: 'cls_cse3', email: 'diya.patel@college.edu', phone: '+91 98201 11202', notes: '' },
+            { id: 'stu_3', rollNo: 'CSE2403', name: 'Kabir Verma', classId: 'cls_cse3', email: 'kabir.verma@college.edu', phone: '+91 98201 11203', notes: 'Medical leave in Oct' },
+            { id: 'stu_4', rollNo: 'CSE2404', name: 'Meera Iyer', classId: 'cls_cse3', email: 'meera.iyer@college.edu', phone: '+91 98201 11204', notes: '' },
+            { id: 'stu_5', rollNo: 'CSE2405', name: 'Rohan Malhotra', classId: 'cls_cse3', email: 'rohan.malhotra@college.edu', phone: '+91 98201 11205', notes: 'Needs attendance counseling' },
+            { id: 'stu_6', rollNo: 'CSE2201', name: 'Ishaan Joshi', classId: 'cls_cse5', email: 'ishaan.joshi@college.edu', phone: '+91 98201 22101', notes: '' },
+            { id: 'stu_7', rollNo: 'CSE2202', name: 'Neha Bansal', classId: 'cls_cse5', email: 'neha.bansal@college.edu', phone: '+91 98201 22102', notes: '' },
+            { id: 'stu_8', rollNo: 'CSE2203', name: 'Siddharth Nair', classId: 'cls_cse5', email: 'siddharth.nair@college.edu', phone: '+91 98201 22103', notes: 'Sports quota travel' },
+            { id: 'stu_9', rollNo: 'CSE2204', name: 'Tanvi Kulkarni', classId: 'cls_cse5', email: 'tanvi.kulkarni@college.edu', phone: '+91 98201 22104', notes: '' },
+            { id: 'stu_10', rollNo: 'BCA2301', name: 'Aditya Rao', classId: 'cls_bca2', email: 'aditya.rao@college.edu', phone: '+91 98201 33101', notes: '' },
+            { id: 'stu_11', rollNo: 'BCA2302', name: 'Priya Menon', classId: 'cls_bca2', email: 'priya.menon@college.edu', phone: '+91 98201 33102', notes: '' },
+            { id: 'stu_12', rollNo: 'BCA2303', name: 'Vivaan Gupta', classId: 'cls_bca2', email: 'vivaan.gupta@college.edu', phone: '+91 98201 33103', notes: 'Part-time internship conflict' }
+          ];
+
+          // Generate deterministic realistic attendance across the last 22 weekdays up to today
+          const attendance = [];
+          const baseDate = new Date();
+          const dates = [];
+          let cursor = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+          while (dates.length < 22) {
+            const day = cursor.getDay();
+            if (day !== 0 && day !== 6) {
+              const yyyy = cursor.getFullYear();
+              const mm = String(cursor.getMonth() + 1).padStart(2, '0');
+              const dd = String(cursor.getDate()).padStart(2, '0');
+              dates.unshift(yyyy + '-' + mm + '-' + dd);
+            }
+            cursor.setDate(cursor.getDate() - 1);
+          }
+
+          // Specific reliability profiles so some students trigger realistic Low Attendance Alerts (<75%)
+          const reliability = {
+            stu_1: 0.94,
+            stu_2: 0.89,
+            stu_3: 0.64,
+            stu_4: 0.92,
+            stu_5: 0.56,
+            stu_6: 0.88,
+            stu_7: 0.95,
+            stu_8: 0.68,
+            stu_9: 0.84,
+            stu_10: 0.91,
+            stu_11: 0.87,
+            stu_12: 0.61
+          };
+
+          dates.forEach(function (dateStr, dIdx) {
+            classes.forEach(function (cls) {
+              const clsSubjects = subjects.filter(function (s) { return s.classId === cls.id; });
+              const clsStudents = students.filter(function (st) { return st.classId === cls.id; });
+              clsSubjects.forEach(function (sub, sIdx) {
+                // Alternate or include both subjects on recent days
+                if ((dIdx + sIdx) % 2 === 0 || dIdx >= dates.length - 4) {
+                  clsStudents.forEach(function (stu, stIdx) {
+                    const score = ((dIdx * 17 + sIdx * 11 + stIdx * 7) % 100) / 100;
+                    const pThreshold = reliability[stu.id] || 0.85;
+                    let status = 'present';
+                    if (score > pThreshold) {
+                      status = (score - pThreshold < 0.08) ? 'late' : 'absent';
+                    }
+                    attendance.push({
+                      id: 'att_' + dateStr + '_' + sub.id + '_' + stu.id,
+                      date: dateStr,
+                      classId: cls.id,
+                      subjectId: sub.id,
+                      studentId: stu.id,
+                      status: status
+                    });
+                  });
+                }
+              });
+            });
+          });
+
+          return {
+            classes: classes,
+            subjects: subjects,
+            students: students,
+            attendance: attendance,
+            settings: {
+              institutionName: 'St. Xavier Institute of Technology',
+              academicTerm: 'Fall Term 2026',
+              threshold: 75,
+              lateWeight: 1, // 1 = full credit (Present + Late), 0.5 = half credit, 0 = not counted
+              theme: 'light'
+            }
+          };
+        }
+
+        function loadState() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) {
+              const seeded = buildSeedData();
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+              return seeded;
+            }
+            const parsed = JSON.parse(raw);
+            return {
+              classes: Array.isArray(parsed.classes) ? parsed.classes : [],
+              subjects: Array.isArray(parsed.subjects) ? parsed.subjects : [],
+              students: Array.isArray(parsed.students) ? parsed.students : [],
+              attendance: Array.isArray(parsed.attendance) ? parsed.attendance : [],
+              settings: Object.assign({
+                institutionName: 'St. Xavier Institute of Technology',
+                academicTerm: 'Fall Term 2026',
+                threshold: 75,
+                lateWeight: 1,
+                theme: 'light'
+              }, parsed.settings || {})
+            };
+          } catch (err) {
+            const fallback = buildSeedData();
+            return fallback;
+          }
+        }
+
+        let state = loadState();
+
+        function saveState() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        /* ---------------- App View & Filter State ---------------- */
+        const ui = {
+          view: 'dashboard',
+          previousView: 'dashboard',
+          selectedStudentId: null,
+          // Dashboard chart controls
+          trendGranularity: 'weekly', // 'weekly' | 'monthly'
+          breakdownClassId: 'all',
+          breakdownPeriod: '30', // '7' | '30' | 'month' | 'all'
+          // Mark attendance state
+          markDate: todayISO(),
+          markClassId: '',
+          markSubjectId: '',
+          markDraft: {}, // studentId -> status
+          markSearch: '',
+          // Students directory filters
+          studentSearch: '',
+          studentClassFilter: 'all',
+          studentStatusFilter: 'all', // 'all' | 'good' | 'low'
+          studentSort: 'roll',
+          // Date-wise filters
+          dateFilterMode: 'single', // 'single' | 'range'
+          dateSingle: todayISO(),
+          dateFrom: '',
+          dateTo: '',
+          dateClassFilter: 'all',
+          dateSubjectFilter: 'all',
+          dateStatusFilter: 'all',
+          dateSearch: '',
+          // Monthly report filters
+          reportMonth: currentMonthISO(),
+          reportClassId: '',
+          reportSubjectId: 'all',
+          reportSearch: '',
+          // Alerts filters
+          alertClassFilter: 'all',
+          alertSearch: '',
+          // Student profile filters
+          profileSubjectFilter: 'all',
+          profileStatusFilter: 'all'
+        };
+
+        // Initialize defaults from state
+        function syncUiDefaults() {
+          if (!ui.markClassId && state.classes.length) {
+            ui.markClassId = state.classes[0].id;
+          }
+          if (ui.markClassId && !state.classes.some(function (c) { return c.id === ui.markClassId; })) {
+            ui.markClassId = state.classes.length ? state.classes[0].id : '';
+          }
+          const validSubs = state.subjects.filter(function (s) { return s.classId === ui.markClassId; });
+          if (!validSubs.some(function (s) { return s.id === ui.markSubjectId; })) {
+            ui.markSubjectId = validSubs.length ? validSubs[0].id : '';
+          }
+          if (!ui.reportClassId && state.classes.length) {
+            ui.reportClassId = state.classes[0].id;
+          }
+          if (ui.reportClassId && !state.classes.some(function (c) { return c.id === ui.reportClassId; })) {
+            ui.reportClassId = state.classes.length ? state.classes[0].id : '';
+          }
+          if (!ui.dateFrom || !ui.dateTo) {
+            const d = new Date();
+            d.setDate(d.getDate() - 14);
+            ui.dateFrom = d.toISOString().slice(0, 10);
+            ui.dateTo = todayISO();
+          }
+        }
+
+        /* ---------------- Calculations ---------------- */
+        function computeStats(records) {
+          let present = 0;
+          let late = 0;
+          let absent = 0;
+          for (let i = 0; i < records.length; i++) {
+            const st = records[i].status;
+            if (st === 'present') present++;
+            else if (st === 'late') late++;
+            else if (st === 'absent') absent++;
+          }
+          const total = present + late + absent;
+          const weight = Number(state.settings.lateWeight);
+          const attendedUnits = present + late * (isNaN(weight) ? 1 : weight);
+          const pct = total > 0 ? Math.round((attendedUnits / total) * 1000) / 10 : 0;
+          return { present: present, late: late, absent: absent, total: total, pct: pct };
+        }
+
+        function getStudentStats(studentId, subjectIdFilter, monthFilter) {
+          const recs = state.attendance.filter(function (r) {
+            if (r.studentId !== studentId) return false;
+            if (subjectIdFilter && subjectIdFilter !== 'all' && r.subjectId !== subjectIdFilter) return false;
+            if (monthFilter && !r.date.startsWith(monthFilter)) return false;
+            return true;
+          });
+          return computeStats(recs);
+        }
+
+        function classesNeededForThreshold(present, late, total, threshold) {
+          if (total === 0) return 0;
+          const weight = Number(state.settings.lateWeight);
+          const attended = present + late * (isNaN(weight) ? 1 : weight);
+          const currentPct = (attended / total) * 100;
+          if (currentPct >= threshold) return 0;
+          const t = threshold / 100;
+          if (t >= 1) return Infinity;
+          // (attended + x) / (total + x) >= t  =>  x >= (t * total - attended) / (1 - t)
+          const needed = Math.ceil((t * total - attended) / (1 - t));
+          return Math.max(1, needed);
+        }
+
+        function getClassById(id) {
+          return state.classes.find(function (c) { return c.id === id; }) || null;
+        }
+
+        function getSubjectById(id) {
+          return state.subjects.find(function (s) { return s.id === id; }) || null;
+        }
+
+        function getStudentById(id) {
+          return state.students.find(function (s) { return s.id === id; }) || null;
+        }
+
+        function getLowAttendanceStudents() {
+          const thr = Number(state.settings.threshold) || 75;
+          return state.students
+            .map(function (stu) {
+              const stats = getStudentStats(stu.id);
+              return { student: stu, stats: stats };
+            })
+            .filter(function (item) {
+              return item.stats.total > 0 && item.stats.pct < thr;
+            })
+            .sort(function (a, b) { return a.stats.pct - b.stats.pct; });
+        }
+
+        function statusLabelHtml(pct, total) {
+          if (total === 0) {
+            return '<span class="status-text status-neutral">No Records</span>';
+          }
+          const thr = Number(state.settings.threshold) || 75;
+          if (pct < thr) {
+            return '<span class="status-text status-absent">Low (&lt;' + thr + '%)</span>';
+          }
+          if (pct < thr + 5) {
+            return '<span class="status-text status-late">Borderline</span>';
+          }
+          return '<span class="status-text status-present">Good Standing</span>';
+        }
+
+        function markStatusBadgeHtml(status) {
+          if (status === 'present') return '<span class="status-text status-present">Present</span>';
+          if (status === 'late') return '<span class="status-text status-late">Late</span>';
+          if (status === 'absent') return '<span class="status-text status-absent">Absent</span>';
+          return '<span class="status-text status-neutral">Unmarked</span>';
+        }
+
+        /* ---------------- CSV Export ---------------- */
+        function downloadCSV(filename, headers, rows) {
+          function csvCell(val) {
+            const s = String(val === null || val === undefined ? '' : val);
+            if (/[",\n\r]/.test(s)) {
+              return '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+          }
+          const lines = [headers.map(csvCell).join(',')];
+          rows.forEach(function (r) {
+            lines.push(r.map(csvCell).join(','));
+          });
+          const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showToast('Exported ' + filename);
+        }
+
+        window.exportOverallCSV = function () {
+          const headers = ['Roll No', 'Student Name', 'Class', 'Email', 'Present', 'Late', 'Absent', 'Total Sessions', 'Attendance %', 'Standing'];
+          const thr = Number(state.settings.threshold) || 75;
+          const rows = state.students.map(function (stu) {
+            const cls = getClassById(stu.classId);
+            const st = getStudentStats(stu.id);
+            const standing = st.total === 0 ? 'No Records' : (st.pct < thr ? 'Low Attendance' : 'Good Standing');
+            return [stu.rollNo, stu.name, cls ? cls.name : 'Unassigned', stu.email || '', st.present, st.late, st.absent, st.total, st.pct + '%', standing];
+          });
+          downloadCSV('attendease_overall_report_' + todayISO() + '.csv', headers, rows);
+        };
+
+        window.exportDatewiseCSV = function () {
+          const filtered = getFilteredDatewiseRecords();
+          const headers = ['Date', 'Roll No', 'Student Name', 'Class', 'Subject Code', 'Subject Name', 'Status'];
+          const rows = filtered.map(function (r) {
+            const stu = getStudentById(r.studentId);
+            const cls = getClassById(r.classId);
+            const sub = getSubjectById(r.subjectId);
+            return [
+              r.date,
+              stu ? stu.rollNo : '',
+              stu ? stu.name : 'Deleted Student',
+              cls ? cls.name : '',
+              sub ? sub.code : '',
+              sub ? sub.name : '',
+              r.status.charAt(0).toUpperCase() + r.status.slice(1)
+            ];
+          });
+          downloadCSV('attendease_datewise_' + todayISO() + '.csv', headers, rows);
+        };
+
+        window.exportMonthlyCSV = function () {
+          const month = ui.reportMonth;
+          const cls = getClassById(ui.reportClassId);
+          const studentsInClass = state.students.filter(function (s) {
+            return !ui.reportClassId || s.classId === ui.reportClassId;
+          });
+          const thr = Number(state.settings.threshold) || 75;
+          const headers = ['Month', 'Roll No', 'Student Name', 'Class', 'Present', 'Late', 'Absent', 'Total Sessions', 'Attendance %', 'Status'];
+          const rows = studentsInClass.map(function (stu) {
+            const st = getStudentStats(stu.id, ui.reportSubjectId, month);
+            const standing = st.total === 0 ? 'No Records' : (st.pct < thr ? 'Low Attendance' : 'Eligible');
+            return [month, stu.rollNo, stu.name, cls ? cls.name : '', st.present, st.late, st.absent, st.total, st.pct + '%', standing];
+          });
+          downloadCSV('attendease_monthly_' + month + '.csv', headers, rows);
+        };
+
+        window.exportAlertsCSV = function () {
+          const alerts = getFilteredAlerts();
+          const thr = Number(state.settings.threshold) || 75;
+          const headers = ['Roll No', 'Student Name', 'Class', 'Email', 'Present', 'Late', 'Absent', 'Total', 'Attendance %', 'Classes Needed for ' + thr + '%'];
+          const rows = alerts.map(function (item) {
+            const cls = getClassById(item.student.classId);
+            const need = classesNeededForThreshold(item.stats.present, item.stats.late, item.stats.total, thr);
+            return [
+              item.student.rollNo,
+              item.student.name,
+              cls ? cls.name : '',
+              item.student.email || '',
+              item.stats.present,
+              item.stats.late,
+              item.stats.absent,
+              item.stats.total,
+              item.stats.pct + '%',
+              need === Infinity ? 'N/A' : need
+            ];
+          });
+          downloadCSV('attendease_low_attendance_alerts_' + todayISO() + '.csv', headers, rows);
+        };
+
+        window.exportStudentCSV = function (studentId) {
+          const stu = getStudentById(studentId);
+          if (!stu) return;
+          const cls = getClassById(stu.classId);
+          const recs = state.attendance
+            .filter(function (r) { return r.studentId === studentId; })
+            .sort(function (a, b) { return b.date.localeCompare(a.date); });
+          const headers = ['Roll No', 'Student Name', 'Class', 'Date', 'Subject Code', 'Subject Name', 'Status'];
+          const rows = recs.map(function (r) {
+            const sub = getSubjectById(r.subjectId);
+            return [
+              stu.rollNo,
+              stu.name,
+              cls ? cls.name : '',
+              r.date,
+              sub ? sub.code : '',
+              sub ? sub.name : '',
+              r.status.charAt(0).toUpperCase() + r.status.slice(1)
+            ];
+          });
+          downloadCSV('attendease_' + stu.rollNo + '_attendance.csv', headers, rows);
+        };
+
+        /* ---------------- Navigation ---------------- */
+        window.navigateTo = function (view) {
+          if (view !== 'student-profile') {
+            ui.previousView = view;
+          }
+          ui.view = view;
+          if (view === 'mark') {
+            syncUiDefaults();
+            loadDraftForCurrentSession();
+          }
+          closeMobileSidebar();
+          render();
+        };
+
+        window.openStudentProfile = function (studentId) {
+          if (!getStudentById(studentId)) {
+            showToast('Student record not found.');
+            return;
+          }
+          if (ui.view !== 'student-profile') {
+            ui.previousView = ui.view;
+          }
+          ui.selectedStudentId = studentId;
+          ui.profileSubjectFilter = 'all';
+          ui.profileStatusFilter = 'all';
+          ui.view = 'student-profile';
+          closeGlobalSearchDropdown();
+          closeMobileSidebar();
+          render();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.openFirstStudentProfile = function () {
+          if (ui.selectedStudentId && getStudentById(ui.selectedStudentId)) {
+            openStudentProfile(ui.selectedStudentId);
+            return;
+          }
+          if (state.students.length > 0) {
+            openStudentProfile(state.students[0].id);
+          } else {
+            navigateTo('students');
+            showToast('Add a student first to view their profile.');
+          }
+        };
+
+        /* ---------------- Theme ---------------- */
+        function applyTheme() {
+          const isDark = state.settings.theme === 'dark';
+          document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+          const label = document.getElementById('themeToggleLabel');
+          if (label) label.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        }
+
+        window.toggleTheme = function () {
+          state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+          saveState();
+          applyTheme();
+          if (ui.view === 'dashboard') {
+            renderDashboardCharts();
+          }
+        };
+
+        /* ---------------- Mobile Sidebar ---------------- */
+        function closeMobileSidebar() {
+          document.getElementById('sidebar').classList.remove('open');
+          document.getElementById('sidebarBackdrop').classList.remove('open');
+        }
+
+        document.getElementById('mobileMenuBtn').addEventListener('click', function () {
+          document.getElementById('sidebar').classList.add('open');
+          document.getElementById('sidebarBackdrop').classList.add('open');
+        });
+        document.getElementById('sidebarCloseBtn').addEventListener('click', closeMobileSidebar);
+        document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+
+        /* ---------------- Global Search ---------------- */
+        const globalSearchInput = document.getElementById('globalStudentSearch');
+        const globalSearchDropdown = document.getElementById('globalSearchDropdown');
+
+        function closeGlobalSearchDropdown() {
+          globalSearchDropdown.classList.remove('open');
+          globalSearchDropdown.innerHTML = '';
+        }
+
+        globalSearchInput.addEventListener('input', function () {
+          const q = globalSearchInput.value.trim().toLowerCase();
+          if (!q) {
+            closeGlobalSearchDropdown();
+            return;
+          }
+          const matches = state.students.filter(function (s) {
+            const cls = getClassById(s.classId);
+            return s.name.toLowerCase().includes(q) ||
+              s.rollNo.toLowerCase().includes(q) ||
+              (s.email && s.email.toLowerCase().includes(q)) ||
+              (cls && cls.name.toLowerCase().includes(q));
+          }).slice(0, 8);
+
+          if (matches.length === 0) {
+            globalSearchDropdown.innerHTML = '<div style="padding:12px 14px;color:var(--text-muted);font-size:13px;">No matching students found</div>';
+          } else {
+            globalSearchDropdown.innerHTML = matches.map(function (s) {
+              const cls = getClassById(s.classId);
+              const stats = getStudentStats(s.id);
+              return '<button type="button" class="search-result-item" onclick="openStudentProfile(\'' + escapeHtml(s.id) + '\')">' +
+                '<div><div style="font-weight:600;color:var(--text);">' + escapeHtml(s.name) + '</div>' +
+                '<div style="font-size:12px;color:var(--text-muted);">' + escapeHtml(s.rollNo) + ' · ' + escapeHtml(cls ? cls.code : 'Unassigned') + '</div></div>' +
+                '<span class="mono" style="font-size:12px;font-weight:600;">' + (stats.total ? stats.pct + '%' : '—') + '</span>' +
+                '</button>';
+            }).join('');
+          }
+          globalSearchDropdown.classList.add('open');
+        });
+
+        document.addEventListener('click', function (e) {
+          if (!e.target.closest('.global-search-wrap')) {
+            closeGlobalSearchDropdown();
+          }
+        });
+
+        /* ---------------- Modal System ---------------- */
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalTitleEl = document.getElementById('modalTitle');
+        const modalBodyEl = document.getElementById('modalBody');
+        const modalFooterEl = document.getElementById('modalFooter');
+
+        function openModal(title, bodyHtml, footerHtml) {
+          modalTitleEl.textContent = title;
+          modalBodyEl.innerHTML = bodyHtml;
+          modalFooterEl.innerHTML = footerHtml;
+          modalOverlay.classList.add('open');
+          const firstInput = modalBodyEl.querySelector('input, select, textarea');
+          if (firstInput) setTimeout(function () { firstInput.focus(); }, 30);
+        }
+
+        window.closeModal = function () {
+          modalOverlay.classList.remove('open');
+        };
+
+        modalOverlay.addEventListener('click', function (e) {
+          if (e.target === modalOverlay) closeModal();
+        });
+
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && modalOverlay.classList.contains('open')) {
+            closeModal();
+          }
+        });
+
+        /* ---------------- Charts (Custom Canvas with Tooltips) ---------------- */
+        const chartTooltip = document.getElementById('chartTooltip');
+
+        function showTooltip(clientX, clientY, html) {
+          chartTooltip.innerHTML = html;
+          chartTooltip.style.opacity = '1';
+          const pad = 14;
+          let left = clientX + pad;
+          let top = clientY - 12;
+          if (left + 200 > window.innerWidth) left = clientX - 180;
+          if (top < 10) top = clientY + pad;
+          chartTooltip.style.left = left + 'px';
+          chartTooltip.style.top = top + 'px';
+        }
+
+        function hideTooltip() {
+          chartTooltip.style.opacity = '0';
+        }
+
+        function getTrendSeries(granularity) {
+          const byBucket = {};
+          state.attendance.forEach(function (r) {
+            let key = '';
+            let label = '';
+            if (granularity === 'monthly') {
+              key = r.date.slice(0, 7);
+              const parts = key.split('-');
+              const d = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+              label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            } else {
+              // Group by ISO week start (Monday)
+              const parts = r.date.split('-');
+              const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+              const day = d.getDay();
+              const diff = (day === 0 ? -6 : 1) - day;
+              d.setDate(d.getDate() + diff);
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, '0');
+              const dd = String(d.getDate()).padStart(2, '0');
+              key = yyyy + '-' + mm + '-' + dd;
+              label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+            if (!byBucket[key]) byBucket[key] = { key: key, label: label, records: [] };
+            byBucket[key].records.push(r);
+          });
+
+          const keys = Object.keys(byBucket).sort();
+          return keys.slice(-10).map(function (k) {
+            const st = computeStats(byBucket[k].records);
+            return {
+              key: k,
+              label: byBucket[k].label,
+              pct: st.pct,
+              total: st.total,
+              present: st.present,
+              late: st.late,
+              absent: st.absent
+            };
+          });
+        }
+
+        function getBreakdownRecords(classId, period) {
+          let minDate = '';
+          if (period === '7' || period === '30') {
+            const d = new Date();
+            d.setDate(d.getDate() - Number(period));
+            minDate = d.toISOString().slice(0, 10);
+          } else if (period === 'month') {
+            minDate = currentMonthISO() + '-01';
+          }
+          return state.attendance.filter(function (r) {
+            if (classId !== 'all' && r.classId !== classId) return false;
+            if (minDate && r.date < minDate) return false;
+            return true;
+          });
+        }
+
+        function drawTrendChart() {
+          const canvas = document.getElementById('trendChartCanvas');
+          if (!canvas) return;
+          const wrap = canvas.parentElement;
+          const dpr = window.devicePixelRatio || 1;
+          const w = wrap.clientWidth;
+          const h = wrap.clientHeight;
+          canvas.width = w * dpr;
+          canvas.height = h * dpr;
+          const ctx = canvas.getContext('2d');
+          ctx.scale(dpr, dpr);
+          ctx.clearRect(0, 0, w, h);
+
+          const style = getComputedStyle(document.documentElement);
+          const gridColor = style.getPropertyValue('--chart-grid').trim();
+          const textMuted = style.getPropertyValue('--text-muted').trim();
+          const lineColor = style.getPropertyValue('--chart-line').trim();
+          const areaColor = style.getPropertyValue('--chart-area').trim();
+          const surfaceColor = style.getPropertyValue('--surface').trim();
+          const dangerColor = style.getPropertyValue('--danger').trim();
+
+          const series = getTrendSeries(ui.trendGranularity);
+          if (series.length === 0) {
+            ctx.fillStyle = textMuted;
+            ctx.font = '13px DM Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No attendance records yet to plot trend.', w / 2, h / 2);
+            canvas._points = [];
+            return;
+          }
+
+          const padL = 44;
+          const padR = 20;
+          const padT = 18;
+          const padB = 34;
+          const plotW = w - padL - padR;
+          const plotH = h - padT - padB;
+
+          // Horizontal grid lines (0, 25, 50, 75, 100)
+          ctx.font = '11px JetBrains Mono, monospace';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          [0, 25, 50, 75, 100].forEach(function (val) {
+            const y = padT + plotH - (val / 100) * plotH;
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padL, y);
+            ctx.lineTo(w - padR, y);
+            ctx.stroke();
+            ctx.fillStyle = textMuted;
+            ctx.fillText(val + '%', padL - 8, y);
+          });
+
+          // Threshold line
+          const thr = Number(state.settings.threshold) || 75;
+          const thrY = padT + plotH - (thr / 100) * plotH;
+          ctx.save();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = dangerColor;
+          ctx.lineWidth = 1.25;
+          ctx.beginPath();
+          ctx.moveTo(padL, thrY);
+          ctx.lineTo(w - padR, thrY);
+          ctx.stroke();
+          ctx.restore();
+
+          const pts = series.map(function (item, idx) {
+            const x = series.length === 1 ? padL + plotW / 2 : padL + (idx / (series.length - 1)) * plotW;
+            const y = padT + plotH - (item.pct / 100) * plotH;
+            return { x: x, y: y, data: item };
+          });
+
+          // Area fill
+          if (pts.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, padT + plotH);
+            pts.forEach(function (p) { ctx.lineTo(p.x, p.y); });
+            ctx.lineTo(pts[pts.length - 1].x, padT + plotH);
+            ctx.closePath();
+            ctx.fillStyle = areaColor;
+            ctx.fill();
+          }
+
+          // Line path
+          ctx.beginPath();
+          pts.forEach(function (p, idx) {
+            if (idx === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+          });
+          ctx.strokeStyle = lineColor;
+          ctx.lineWidth = 2.5;
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+
+          // X labels & Data dots
+          ctx.font = '11px DM Sans, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          pts.forEach(function (p) {
+            ctx.fillStyle = textMuted;
+            ctx.fillText(p.data.label, p.x, padT + plotH + 10);
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = surfaceColor;
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = lineColor;
+            ctx.stroke();
+          });
+
+          canvas._points = pts;
+        }
+
+        function drawBreakdownChart() {
+          const canvas = document.getElementById('breakdownChartCanvas');
+          if (!canvas) return;
+          const wrap = canvas.parentElement;
+          const dpr = window.devicePixelRatio || 1;
+          const w = wrap.clientWidth;
+          const h = wrap.clientHeight;
+          canvas.width = w * dpr;
+          canvas.height = h * dpr;
+          const ctx = canvas.getContext('2d');
+          ctx.scale(dpr, dpr);
+          ctx.clearRect(0, 0, w, h);
+
+          const style = getComputedStyle(document.documentElement);
+          const textColor = style.getPropertyValue('--text').trim();
+          const textMuted = style.getPropertyValue('--text-muted').trim();
+          const presentColor = style.getPropertyValue('--chart-present').trim();
+          const lateColor = style.getPropertyValue('--chart-late').trim();
+          const absentColor = style.getPropertyValue('--chart-absent').trim();
+          const gridColor = style.getPropertyValue('--chart-grid').trim();
+
+          const recs = getBreakdownRecords(ui.breakdownClassId, ui.breakdownPeriod);
+          const st = computeStats(recs);
+
+          if (st.total === 0) {
+            ctx.fillStyle = textMuted;
+            ctx.font = '13px DM Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No marks recorded for this selection.', w / 2, h / 2);
+            canvas._slices = [];
+            return;
+          }
+
+          const segments = [
+            { label: 'Present', count: st.present, color: presentColor },
+            { label: 'Late', count: st.late, color: lateColor },
+            { label: 'Absent', count: st.absent, color: absentColor }
+          ].filter(function (seg) { return seg.count > 0; });
+          '<span class="tabular" style="color:var(--success);">Present: ' + st.present + '</span>' +
+              '<span class="tabular" style="color:var(--warning);">Late: ' + st.late + '</span>' +
+              '<span class="tabular" style="color:var(--danger);">Absent: ' + st.absent + '</span>' +
+            '</div>' +
+
+            '<div class="table-wrap">' +
+              (recs.length === 0
+                ? '<div class="empty-state"><h3>No attendance logs for this filter</h3><p>Try switching to Date Range or choosing another date.</p><button type="button" class="btn btn-secondary" onclick="setDateFilter(\'mode\', \'range\')">View Last 14 Days</button></div>'
+                : '<table><thead><tr><th>Date</th><th>Roll No</th><th>Student</th><th>Class</th><th>Subject</th><th>Status</th><th class="text-right">Quick Edit</th></tr></thead><tbody>' + rows + '</tbody></table>') +
+            '</div>' +
+            (recs.length > 150 ? '<div style="padding:12px 16px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);">Showing first 150 of ' + recs.length + ' records. Export CSV for complete log.</div>' : '') +
+          '</div>';
+        }
+
+        window.setDateFilter = function (key, val) {
+          if (key === 'mode') ui.dateFilterMode = val;
+          if (key === 'single') ui.dateSingle = val;
+          if (key === 'from') ui.dateFrom = val;
+          if (key === 'to') ui.dateTo = val;
+          if (key === 'class') { ui.dateClassFilter = val; ui.dateSubjectFilter = 'all'; }
+          if (key === 'subject') ui.dateSubjectFilter = val;
+          if (key === 'status') ui.dateStatusFilter = val;
+          if (key === 'search') ui.dateSearch = val;
+          render();
+          if (key === 'search') {
+            const el = document.getElementById('dateSearchInput');
+            if (el) { el.focus(); el.setSelectionRange(val.length, val.length); }
+          }
+        };
+
+        window.jumpToMarkFromDate = function () {
+          if (ui.dateFilterMode === 'single' && ui.dateSingle) ui.markDate = ui.dateSingle;
+          if (ui.dateClassFilter !== 'all') ui.markClassId = ui.dateClassFilter;
+          if (ui.dateSubjectFilter !== 'all') ui.markSubjectId = ui.dateSubjectFilter;
+          loadDraftForCurrentSession();
+          navigateTo('mark');
+        };
+
+        // 7. Monthly Attendance Reports View
+        function renderMonthlyView() {
+          syncUiDefaults();
+          const month = ui.reportMonth;
+          const thr = Number(state.settings.threshold) || 75;
+          const classOpts = state.classes.map(function (c) {
+            return '<option value="' + escapeHtml(c.id) + '"' + (ui.reportClassId === c.id ? ' selected' : '') + '>' + escapeHtml(c.code + ' · ' + c.name) + '</option>';
+          }).join('');
+
+          const classSubs = state.subjects.filter(function (s) { return s.classId === ui.reportClassId; });
+          const subOpts = '<option value="all"' + (ui.reportSubjectId === 'all' ? ' selected' : '') + '>All Subjects</option>' +
+            classSubs.map(function (s) {
+              return '<option value="' + escapeHtml(s.id) + '"' + (ui.reportSubjectId === s.id ? ' selected' : '') + '>' + escapeHtml(s.code + ' · ' + s.name) + '</option>';
+            }).join('');
+
+          const q = ui.reportSearch.trim().toLowerCase();
+          const studentsInClass = state.students.filter(function (s) {
+            if (ui.reportClassId && s.classId !== ui.reportClassId) return false;
+            if (q && !s.name.toLowerCase().includes(q) && !s.rollNo.toLowerCase().includes(q)) return false;
+            return true;
+          }).sort(function (a, b) { return a.rollNo.localeCompare(b.rollNo); });
+
+          // Recorded dates in this month for selected class/subject
+          const monthRecs = state.attendance.filter(function (r) {
+            if (!r.date.startsWith(month)) return false;
+            if (ui.reportClassId && r.classId !== ui.reportClassId) return false;
+            if (ui.reportSubjectId !== 'all' && r.subjectId !== ui.reportSubjectId) return false;
+            return true;
+          });
+          const overallMonthStats = computeStats(monthRecs);
+
+          const uniqueDays = Array.from(new Set(monthRecs.map(function (r) { return r.date; }))).sort();
+
+          const summaryRows = studentsInClass.map(function (stu) {
+            const st = getStudentStats(stu.id, ui.reportSubjectId, month);
+            return '<tr>' +
+              '<td class="mono" style="font-weight:600;">' + escapeHtml(stu.rollNo) + '</td>' +
+              '<td><button type="button" class="student-link" onclick="openStudentProfile(\'' + escapeHtml(stu.id) + '\')">' + escapeHtml(stu.name) + '</button></td>' +
+              '<td class="tabular text-right">' + st.present + '</td>' +
+              '<td class="tabular text-right">' + st.late + '</td>' +
+              '<td class="tabular text-right">' + st.absent + '</td>' +
+              '<td class="tabular text-right">' + st.total + '</td>' +
+              '<td class="mono text-right" style="font-weight:600;">' + (st.total ? st.pct + '%' : '—') + '</td>' +
+              '<td>' + statusLabelHtml(st.pct, st.total) + '</td>' +
+              '</tr>';
+          }).join('');
+
+          // Day-by-Day matrix for the month
+          const matrixDayHeaders = uniqueDays.map(function (d) {
+            return '<th class="matrix-cell">' + d.slice(8, 10) + '</th>';
+          }).join('');
+
+          const matrixRows = studentsInClass.map(function (stu) {
+            const dayCells = uniqueDays.map(function (d) {
+              const dayRecs = monthRecs.filter(function (r) { return r.studentId === stu.id && r.date === d; });
+              if (dayRecs.length === 0) return '<td class="matrix-cell cell-none">·</td>';
+              // If multiple subjects on same day, summarize or show dominant mark
+              const hasA = dayRecs.some(function (r) { return r.status === 'absent'; });
+              const hasL = dayRecs.some(function (r) { return r.status === 'late'; });
+              if (dayRecs.length === 1) {
+                const st = dayRecs[0].status;
+                if (st === 'present') return '<td class="matrix-cell cell-p" title="' + d + ': Present">P</td>';
+                if (st === 'late') return '<td class="matrix-cell cell-l" title="' + d + ': Late">L</td>';
+                return '<td class="matrix-cell cell-a" title="' + d + ': Absent">A</td>';
+              }
+              const pCnt = dayRecs.filter(function (r) { return r.status === 'present'; }).length;
+              if (pCnt === dayRecs.length) return '<td class="matrix-cell cell-p" title="' + d + ': All Present">P</td>';
+              if (hasA) return '<td class="matrix-cell cell-a" title="' + d + ': ' + pCnt + '/' + dayRecs.length + ' Present">' + pCnt + '/' + dayRecs.length + '</td>';
+              if (hasL) return '<td class="matrix-cell cell-l" title="' + d + ': Late">L</td>';
+              return '<td class="matrix-cell cell-p">P</td>';
+            }).join('');
+            return '<tr>' +
+              '<td class="mono" style="white-space:nowrap;">' + escapeHtml(stu.rollNo) + '</td>' +
+              '<td style="white-space:nowrap;"><button type="button" class="student-link" onclick="openStudentProfile(\'' + escapeHtml(stu.id) + '\')">' + escapeHtml(stu.name) + '</button></td>' +
+              dayCells +
+              '</tr>';
+          }).join('');
+
+          return '<div class="page-header">' +
+            '<div><h1 class="page-title">Monthly Attendance Reports</h1><p class="page-subtitle">' + formatMonthReadable(month) + ' · Summary table and daily attendance register matrix</p></div>' +
+            '<div class="page-actions">' +
+              '<button type="button" class="btn btn-primary" onclick="exportMonthlyCSV()">Export Monthly CSV</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="card" style="margin-bottom:20px;">' +
+            '<div class="toolbar">' +
+            '<div class="toolbar-group">' +
+                '<div class="field"><label class="field-label" for="reportMonthInput">Month</label><input id="reportMonthInput" type="month" class="input" value="' + escapeHtml(month) + '" onchange="setReportFilter(\'month\', this.value)" /></div>' +
+                '<div class="field"><label class="field-label" for="reportClassSelect">Class</label><select id="reportClassSelect" class="select" onchange="setReportFilter(\'class\', this.value)">' + (classOpts || '<option value="">No Classes</option>') + '</select></div>' +
+                '<div class="field"><label class="field-label" for="reportSubSelect">Subject</label><select id="reportSubSelect" class="select" onchange="setReportFilter(\'subject\', this.value)">' + subOpts + '</select></div>' +
+              '</div>' +
+              '<div class="toolbar-group">' +
+                '<input type="search" id="reportSearchInput" class="input" placeholder="Filter student..." value="' + escapeHtml(ui.reportSearch) + '" oninput="setReportFilter(\'search\', this.value)" />' +
+              '</div>' +
+            '</div>' +
+
+            '<div style="padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface-muted);display:flex;align-items:center;gap:22px;flex-wrap:wrap;font-size:13px;">' +
+              '<span class="tabular">Sessions Days: <strong>' + uniqueDays.length + '</strong></span>' +
+              '<span class="tabular">Monthly Average: <strong>' + (overallMonthStats.total ? overallMonthStats.pct + '%' : '—') + '</strong></span>' +
+              '<span class="tabular" style="color:var(--success);">Present: ' + overallMonthStats.present + '</span>' +
+              '<span class="tabular" style="color:var(--warning);">Late: ' + overallMonthStats.late + '</span>' +
+              '<span class="tabular" style="color:var(--danger);">Absent: ' + overallMonthStats.absent + '</span>' +
+              '<span class="tabular">Defaulters (&lt;' + thr + '%): <strong>' + studentsInClass.filter(function (s) { const st = getStudentStats(s.id, ui.reportSubjectId, month); return st.total > 0 && st.pct < thr; }).length + '</strong></span>' +
+            '</div>' +
+
+            '<div class="table-wrap">' +
+              (studentsInClass.length === 0
+                ? '<div class="empty-state"><h3>No students found for this report</h3><p>Choose a class with enrolled students or clear your search filter.</p></div>'
+                : '<table><thead><tr><th>Roll No</th><th>Student</th><th class="text-right">Present</th><th class="text-right">Late</th><th class="text-right">Absent</th><th class="text-right">Total</th><th class="text-right">Monthly %</th><th>Status</th></tr></thead><tbody>' + summaryRows + '</tbody></table>') +
+            '</div>' +
+          '</div>' +
+
+          (uniqueDays.length > 0 && studentsInClass.length > 0
+            ? '<div class="card">' +
+                '<div class="card-header"><div><h2 class="card-title">Day-by-Day Attendance Register (' + formatMonthReadable(month) + ')</h2><div class="card-subtitle">P = Present · L = Late · A = Absent · Numbers show multi-subject daily fraction</div></div></div>' +
+                '<div class="table-wrap">' +
+                  '<table><thead><tr><th>Roll No</th><th>Student</th>' + matrixDayHeaders + '</tr></thead><tbody>' + matrixRows + '</tbody></table>' +
+                '</div>' +
+              '</div>'
+            : '');
+        }
+
+        window.setReportFilter = function (key, val) {
+          if (key === 'month') ui.reportMonth = val;
+          if (key === 'class') { ui.reportClassId = val; ui.reportSubjectId = 'all'; }
+          if (key === 'subject') ui.reportSubjectId = val;
+          if (key === 'search') ui.reportSearch = val;
+          render();
+          if (key === 'search') {
+            const el = document.getElementById('reportSearchInput');
+            if (el) { el.focus(); el.setSelectionRange(val.length, val.length); }
+          }
+        };
+
+        // 8. Low Attendance Alerts View
+        function getFilteredAlerts() {
+          const q = ui.alertSearch.trim().toLowerCase();
+          return getLowAttendanceStudents().filter(function (item) {
+            if (ui.alertClassFilter !== 'all' && item.student.classId !== ui.alertClassFilter) return false;
+            if (q) {
+              const hay = (item.student.name + ' ' + item.student.rollNo + ' ' + (item.student.email || '')).toLowerCase();
+              if (!hay.includes(q)) return false;
+            }
+            return true;
+          });
+        }
+
+        function renderAlertsView() {
+          const thr = Number(state.settings.threshold) || 75;
+          const alerts = getFilteredAlerts();
+          const classOpts = '<option value="all">All Classes</option>' +
+            state.classes.map(function (c) {
+              return '<option value="' + escapeHtml(c.id) + '"' + (ui.alertClassFilter === c.id ? ' selected' : '') + '>' + escapeHtml(c.code + ' · ' + c.name) + '</option>';
+            }).join('');
+
+          const rows = alerts.map(function (item) {
+            const stu = item.student;
+            const st = item.stats;
+            const cls = getClassById(stu.classId);
+            const needed = classesNeededForThreshold(st.present, st.late, st.total, thr);
+            return '<tr>' +
+              '<td class="mono" style="font-weight:600;">' + escapeHtml(stu.rollNo) + '</td>' +
+              '<td>' +
+                '<button type="button" class="student-link" onclick="openStudentProfile(\'' + escapeHtml(stu.id) + '\')">' + escapeHtml(stu.name) + '</button>' +
+                '<div style="font-size:12px;color:var(--text-muted);">' + escapeHtml(stu.email || 'No email') + '</div>' +
+              '</td>' +
+              '<td>' + escapeHtml(cls ? cls.name : '—') + '</td>' +
+              '<td class="tabular text-right">' + st.present + ' / ' + st.total + '</td>' +
+              '<td class="mono text-right" style="font-weight:700;color:var(--danger);">' + st.pct + '%</td>' +
+              '<td>' + (needed === Infinity ? 'Threshold set to 100%' : 'Attend next <strong>' + needed + '</strong> consecutive classes') + '</td>' +
+              '<td class="text-right" style="white-space:nowrap;">' +
+                '<button type="button" class="btn btn-secondary btn-sm" onclick="openNoticeModal(\'' + escapeHtml(stu.id) + '\')">Advisory Notice</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" onclick="openStudentProfile(\'' + escapeHtml(stu.id) + '\')">Profile</button>' +
+              '</td>' +
+              '</tr>';
+          }).join('');
+
+          return '<div class="page-header">' +
+            '<div><h1 class="page-title">Low Attendance Alerts</h1><p class="page-subtitle">Students currently below the ' + thr + '% minimum attendance policy</p></div>' +
+            '<div class="page-actions">' +
+              '<button type="button" class="btn btn-secondary" onclick="exportAlertsCSV()">Export Alerts CSV</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="card">' +
+            '<div class="toolbar">' +
+              '<div class="toolbar-group">' +
+                '<input type="search" id="alertSearchInput" class="input" placeholder="Search alerted student..." value="' + escapeHtml(ui.alertSearch) + '" oninput="setAlertFilter(\'search\', this.value)" />' +
+                '<select class="select" aria-label="Filter alerts by class" onchange="setAlertFilter(\'class\', this.value)">' + classOpts + '</select>' +
+              '</div>' +
+              '<div class="toolbar-group" style="font-size:13px;color:var(--text-muted);">' +
+                'Threshold: <strong class="mono" style="color:var(--text);">' + thr + '%</strong>' +
+              '</div>' +
+            '</div>' +
+            '<div class="table-wrap">' +
+              (alerts.length === 0
+               ? '<div class="empty-state"><h3>No low attendance alerts</h3><p>All students in this selection currently meet or exceed the ' + thr + '% attendance threshold.</p></div>'
+                : '<table><thead><tr><th>Roll No</th><th>Student</th><th>Class</th><th class="text-right">Attended</th><th class="text-right">Current %</th><th>Recovery Target</th><th class="text-right">Actions</th></tr></thead><tbody>' + rows + '</tbody></table>') +
+            '</div>' +
+          '</div>';
+        }
+
+        window.setAlertFilter = function (key, val) {
+          if (key === 'class') ui.alertClassFilter = val;
+          if (key === 'search') ui.alertSearch = val;
+          render();
+          if (key === 'search') {
+            const el = document.getElementById('alertSearchInput');
+            if (el) { el.focus(); el.setSelectionRange(val.length, val.length); }
+          }
+        };
+
+        window.openNoticeModal = function (studentId) {
+          const stu = getStudentById(studentId);
+          if (!stu) return;
+          const cls = getClassById(stu.classId);
+          const st = getStudentStats(stu.id);
+          const thr = Number(state.settings.threshold) || 75;
+          const needed = classesNeededForThreshold(st.present, st.late, st.total, thr);
+          const noticeText =
+            'ATTENDANCE ADVISORY NOTICE\n' +
+            'Institution: ' + state.settings.institutionName + ' (' + state.settings.academicTerm + ')\n' +
+            'Date: ' + formatDateReadable(todayISO()) + '\n\n' +
+            'Student: ' + stu.name + ' (' + stu.rollNo + ')\n' +
+            'Class: ' + (cls ? cls.name : 'Unassigned') + '\n' +
+            'Current Attendance: ' + st.pct + '% (' + st.present + ' Present, ' + st.late + ' Late, ' + st.absent + ' Absent out of ' + st.total + ' sessions)\n' +
+            'Minimum Required: ' + thr + '%\n\n' +
+            'Action Required: Please attend the next ' + (needed === Infinity ? 'all' : needed) + ' consecutive scheduled classes to restore eligibility.';
+
+          openModal(
+            'Low Attendance Advisory Notice',
+            '<div class="field"><label class="field-label" for="noticeTextBox">Formatted Advisory Message</label><textarea id="noticeTextBox" class="textarea mono" style="min-height:210px;font-size:12px;line-height:1.55;">' + escapeHtml(noticeText) + '</textarea></div>',
+            '<button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>' +
+            '<button type="button" class="btn btn-primary" onclick="copyAdvisoryNotice()">Copy Notice</button>'
+          );
+        };
+
+        window.copyAdvisoryNotice = function () {
+          const box = document.getElementById('noticeTextBox');
+          if (!box) return;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(box.value).then(function () {
+              showToast('Advisory notice copied to clipboard');
+            });
+          } else {
+            box.select();
+            document.execCommand('copy');
+            showToast('Advisory notice copied');
+          }
+        };
+
+        // 9. Settings & localStorage Data View
+        function renderSettingsView() {
+          const storageBytes = new Blob([localStorage.getItem(STORAGE_KEY) || '']).size;
+          const storageKB = (storageBytes / 1024).toFixed(1);
+
+          return '<div class="page-header">' +
+            '<div><h1 class="page-title">Settings &amp; Storage</h1><p class="page-subtitle">Configure attendance policies, college details, and localStorage persistence</p></div>' +
+          '</div>' +
+
+          '<div class="two-col-grid">' +
+            '<div class="card">' +
+              '<div class="card-header"><div><h2 class="card-title">Attendance Policy &amp; Institution</h2><div class="card-subtitle">Saved automatically in localStorage</div></div></div>' +
+              '<div class="card-body">' +
+                '<form class="form-grid" onsubmit="return false;">' +
+                  '<div class="field" style="grid-column:1/-1;"><label class="field-label" for="setInstName">Institution Name</label><input id="setInstName" class="input" value="' + escapeHtml(state.settings.institutionName) + '" /></div>' +
+                  '<div class="field"><label class="field-label" for="setTerm">Academic Term</label><input id="setTerm" class="input" value="' + escapeHtml(state.settings.academicTerm) + '" /></div>' +
+                  '<div class="field"><label class="field-label" for="setThreshold">Low Attendance Threshold (%)</label><input id="setThreshold" type="number" min="50" max="95" class="input tabular" value="' + escapeHtml(state.settings.threshold) + '" /></div>' +
+                  '<div class="field" style="grid-column:1/-1;"><label class="field-label" for="setLateWeight">Late Mark Calculation Policy</label>' +
+                    '<select id="setLateWeight" class="select">' +
+                      '<option value="1"' + (Number(state.settings.lateWeight) === 1 ? ' selected' : '') + '>Count Late as Full Attendance (1.0x)</option>' +
+                      '<option value="0.5"' + (Number(state.settings.lateWeight) === 0.5 ? ' selected' : '') + '>Count Late as Half Attendance (0.5x)</option>' +
+                      '<option value="0"' + (Number(state.settings.lateWeight) === 0 ? ' selected' : '') + '>Do Not Credit Late Toward Attendance % (0.0x)</option>' +
+                    '</select>' +
+                  '</div>' +
+                  '<div style="grid-column:1/-1;display:flex;justify-content:flex-end;margin-top:6px;">' +
+                    '<button type="button" class="btn btn-primary" onclick="saveSettingsForm()">Save Policy Settings</button>' +
+                  '</div>' +
+                '</form>' +
+              '</div>' +
+            '</div>' +
+
+            '<div class="card">' +
+              '<div class="card-header"><div><h2 class="card-title">Local Storage Management</h2><div class="card-subtitle">Browser storage key: <span class="mono">' + STORAGE_KEY + '</span></div></div></div>' +
+              '<div class="card-body" style="display:flex;flex-direction:column;gap:14px;">' +
+                '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">' +
+                  '<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:12px;color:var(--text-muted);">Students Stored</div><div class="mono" style="font-size:20px;font-weight:700;">' + state.students.length + '</div></div>' +
+                  '<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:12px;color:var(--text-muted);">Attendance Records</div><div class="mono" style="font-size:20px;font-weight:700;">' + state.attendance.length + '</div></div>' +
+                  '<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:12px;color:var(--text-muted);">Classes &amp; Subjects</div><div class="mono" style="font-size:20px;font-weight:700;">' + state.classes.length + ' / ' + state.subjects.length + '</div></div>' +
+                  '<div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:12px;color:var(--text-muted);">Storage Used</div><div class="mono" style="font-size:20px;font-weight:700;">' + storageKB + ' KB</div></div>' +
+                '</div>' +
+                '<div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:6px;">' +
+                  '<button type="button" class="btn btn-primary" onclick="downloadSourceHtml()">Download index.html</button>' +
+                  '<button type="button" class="btn btn-secondary" onclick="openSourceCopyModal()">View / Copy Full HTML</button>' +
+                  '<button type="button" class="btn btn-secondary" onclick="exportOverallCSV()">Export Full CSV</button>' +
+            '<button type="button" class="btn btn-secondary" onclick="confirmResetDemo()">Restore Demo Data</button>' +
+                  '<button type="button" class="btn btn-danger" onclick="confirmClearAll()">Clear All Data</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }
+
+        function getStandaloneHtml() {
+          const clone = document.documentElement.cloneNode(true);
+          clone.removeAttribute('data-theme');
+          const viteScripts = clone.querySelectorAll('script[src*="@vite"]');
+          viteScripts.forEach(function (el) { el.remove(); });
+          const mainEl = clone.querySelector('#mainContent');
+          if (mainEl) mainEl.innerHTML = '';
+          const toastEl = clone.querySelector('#toastContainer');
+          if (toastEl) toastEl.innerHTML = '';
+          const tipEl = clone.querySelector('#chartTooltip');
+          if (tipEl) { tipEl.innerHTML = ''; tipEl.removeAttribute('style'); }
+          const ddEl = clone.querySelector('#globalSearchDropdown');
+          if (ddEl) { ddEl.innerHTML = ''; ddEl.classList.remove('open'); }
+          const modalEl = clone.querySelector('#modalOverlay');
+          if (modalEl) modalEl.classList.remove('open');
+          const mBody = clone.querySelector('#modalBody');
+          if (mBody) mBody.innerHTML = '';
+          const mFoot = clone.querySelector('#modalFooter');
+          if (mFoot) mFoot.innerHTML = '';
+          const instEl = clone.querySelector('#sidebarInstitution');
+          if (instEl) instEl.textContent = '';
+          const alertEl = clone.querySelector('#sidebarAlertCount');
+          if (alertEl) alertEl.textContent = '0';
+          return '<!doctype html>\n' + clone.outerHTML;
+        }
+
+        window.downloadSourceHtml = function () {
+          const htmlText = getStandaloneHtml();
+          const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'index.html';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showToast('Downloaded standalone index.html');
+        };
+
+        window.openSourceCopyModal = function () {
+          const htmlText = getStandaloneHtml();
+          openModal(
+            'Complete Standalone index.html',
+            '<div class="field"><label class="field-label" for="sourceCodeBox">Full Single-File Code (' + htmlText.split('\n').length + ' lines)</label>' +
+              '<textarea id="sourceCodeBox" class="textarea mono" readonly style="min-height:280px;font-size:11px;line-height:1.45;"></textarea></div>',
+            '<button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>' +
+            '<button type="button" class="btn btn-secondary" onclick="downloadSourceHtml()">Download File</button>' +
+            '<button type="button" class="btn btn-primary" onclick="copySourceCodeBox()">Copy All</button>'
+          );
+          const box = document.getElementById('sourceCodeBox');
+          if (box) box.value = htmlText;
+        };
+
+        window.copySourceCodeBox = function () {
+          const box = document.getElementById('sourceCodeBox');
+          if (!box) return;
+          box.focus();
+          box.select();
+          box.setSelectionRange(0, box.value.length);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(box.value).then(function () {
+              showToast('Copied complete index.html to clipboard');
+            }).catch(function () {
+              document.execCommand('copy');
+              showToast('Copied complete index.html');
+            });
+          } else {
+            document.execCommand('copy');
+            showToast('Copied complete index.html');
+          }
+        };
+
+        window.saveSettingsForm = function () {
+          const inst = document.getElementById('setInstName').value.trim() || 'College Attendance Portal';
+          const term = document.getElementById('setTerm').value.trim() || 'Academic Term';
+          const thr = Math.min(95, Math.max(50, Number(document.getElementById('setThreshold').value) || 75));
+          const lw = Number(document.getElementById('setLateWeight').value);
+          state.settings.institutionName = inst;
+          state.settings.academicTerm = term;
+          state.settings.threshold = thr;
+          state.settings.lateWeight = isNaN(lw) ? 1 : lw;
+          saveState();
+          render();
+          showToast('Settings saved to localStorage');
+        };
+
+        window.confirmResetDemo = function () {
+          openModal(
+            'Restore Demo Data',
+            '<p style="margin:0;color:var(--text-secondary);">Replace current localStorage records with the default sample college dataset (3 classes, 6 subjects, 12 students, 22 days of attendance)?</p>',
+            '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+            '<button type="button" class="btn btn-primary" onclick="executeResetDemo()">Restore Demo Data</button>'
+          );
+        };
+
+        window.executeResetDemo = function () {
+          const theme = state.settings.theme;
+          state = buildSeedData();
+          state.settings.theme = theme;
+          saveState();
+          syncUiDefaults();
+          loadDraftForCurrentSession();
+          closeModal();
+          render();
+          showToast('Sample dataset restored');
+        };
+
+        window.confirmClearAll = function () {
+          openModal(
+            'Clear All Data',
+            '<p style="margin:0;color:var(--text-secondary);">Permanently delete all students, classes, subjects, and attendance history from localStorage? This cannot be undone.</p>',
+            '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+            '<button type="button" class="btn btn-danger" onclick="executeClearAll()">Clear Everything</button>'
+          );
+        };
+
+        window.executeClearAll = function () {
+          state = {
+            classes: [],
+            subjects: [],
+            students: [],
+            attendance: [],
+            settings: state.settings
+          };
+          ui.markClassId = '';
+          ui.markSubjectId = '';
+          ui.markDraft = {};
+          ui.reportClassId = '';
+          ui.selectedStudentId = null;
+          saveState();
+          closeModal();
+          render();
+          showToast('All localStorage data cleared');
+        };
+
+        /* ---------------- Master Render ---------------- */
+        function updateChrome() {
+          // Sidebar active state
+          const navItems = document.querySelectorAll('.nav-item[data-view]');
+          navItems.forEach(function (btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-view') === ui.view);
+          });
+
+          // Sidebar alert badge
+          const alertCount = getLowAttendanceStudents().length;
+          const badge = document.getElementById('sidebarAlertCount');
+          if (badge) {
+            badge.textContent = alertCount > 0 ? String(alertCount) : '0';
+            badge.style.color = alertCount > 0 ? 'var(--danger)' : 'var(--text-muted)';
+          }
+
+          // Sidebar institution footer
+          const instEl = document.getElementById('sidebarInstitution');
+          if (instEl) {
+            instEl.textContent = state.settings.institutionName + ' · ' + state.settings.academicTerm;
+          }
+
+          // Topbar Breadcrumb
+          const titles = {
+            dashboard: 'Dashboard',
+            mark: 'Mark Attendance',
+            students: 'Students',
+            academics: 'Classes & Subjects',
+            datewise: 'Date-wise Log',
+            monthly: 'Monthly Reports',
+            alerts: 'Low Attendance Alerts',
+            'student-profile': 'Student Profile',
+            settings: 'Settings & Storage'
+          };
+          const bc = document.getElementById('topbarBreadcrumb');
+          if (bc) {
+            if (ui.view === 'student-profile' && ui.selectedStudentId) {
+              const stu = getStudentById(ui.selectedStudentId);
+              bc.innerHTML = '<span>AttendEase</span><span>/</span><span>Students</span><span>/</span><strong>' + escapeHtml(stu ? stu.name : 'Profile') + '</strong>';
+            } else {
+              bc.innerHTML = '<span>AttendEase</span><span>/</span><strong>' + escapeHtml(titles[ui.view] || 'Dashboard') + '</strong>';
+            }
+          }
+        }
+
+        function render() {
+          syncUiDefaults();
+          updateChrome();
+          const main = document.getElementById('mainContent');
+          if (ui.view === 'dashboard') {
+            main.innerHTML = renderDashboardView();
+            requestAnimationFrame(renderDashboardCharts);
+          } else if (ui.view === 'mark') {
+            main.innerHTML = renderMarkAttendanceView();
+          } else if (ui.view === 'students') {
+            main.innerHTML = renderStudentsView();
+          } else if (ui.view === 'academics') {
+            main.innerHTML = renderAcademicsView();
+          } else if (ui.view === 'datewise') {
+            main.innerHTML = renderDatewiseView();
+          } else if (ui.view === 'monthly') {
+            main.innerHTML = renderMonthlyView();
+          } else if (ui.view === 'alerts') {
+            main.innerHTML = renderAlertsView();
+          } else if (ui.view === 'student-profile') {
+            main.innerHTML = renderStudentProfileView();
+          } else if (ui.view === 'settings') {
+            main.innerHTML = renderSettingsView();
+          }
+        }
+
+        /* ---------------- Boot ---------------- */
+        applyTheme();
+        syncUiDefaults();
+        loadDraftForCurrentSession();
+        render();
+      })();
+    </script>
+  </body>
+</html>
